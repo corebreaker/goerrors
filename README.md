@@ -44,9 +44,9 @@ func main() {
 This will show:
 ```
 Division by zero
-    github.com/corebreaker/goerrors.MakeError (/data/development/projects/go/src/github.com/corebreaker/goerrors/errors.go:73)
-    main.my_func (/home/frederic/.local/share/data/liteide/liteide/goplay.go:11)
-    main.main (/home/frederic/.local/share/data/liteide/liteide/goplay.go:23)
+    github.com/corebreaker/goerrors.MakeError (/projects/go/src/github.com/corebreaker/goerrors/errors.go:73)
+    main.my_func (/projects/go/prototype/main.go:11)
+    main.main (/projects/go/prototype/main.go:23)
     runtime.main (/opt/go/src/runtime/proc.go:183)
     runtime.goexit (/opt/go/src/runtime/asm_amd64.s:2086)
 ------------------------------------------------------------------------------
