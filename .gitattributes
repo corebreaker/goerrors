@@ -1,3 +1,4 @@
-stylesheets/* linguist-vendored=false
-*.json linguist-vendored=false
-*.html linguist-vendored=false
+stylesheets/* linguist-vendored=false linguist-documentation=false
+*.json linguist-vendored=false linguist-documentation=false
+*.html linguist-vendored=false linguist-documentation=false
+*.css linguist-vendored=false linguist-documentation=false
