@@ -1,0 +1,3 @@
+stylesheets/* linguist-vendored=false
+*.json linguist-vendored=false
+*.html linguist-vendored=false
