@@ -3,37 +3,66 @@ package goerrors
 import (
     "bytes"
     "fmt"
-    "runtime"
+    "reflect"
+    "unsafe"
 )
 
-// Interface for extended Go errors
-type GoError interface {
-    // This is an error
-    error
+var (
+    // Inheritance cache
+    error_hierarchies = make(map[string][]string)
+)
 
-    // Add more informations on that error
-    AddInfo(info string, args ...interface{}) GoError
-}
+// Handler for executing Try, Catch, or Finally block
+type ErrorHandler func(err IError) error
 
-// Internal error structure
-type tError struct {
-    source error        // Cause or original error
-    infos  bytes.Buffer // Additionnal informations
-    trace  []string     // Stack trace
+// Basic error structure
+type GoError struct {
+    source   error        // Cause or original error
+    message  string       // Error message
+    trace    []string     // Stack trace
+    data     interface{}  // Custom data
+    err_type reflect.Type // Type of this error
 }
 
 // Standard method of `error` interface
-// @see error.Error
-func (self *tError) Error() string {
+func (self *GoError) Error() string {
     var out bytes.Buffer
 
+    err := self.get_reference()
+
+    // Prints error name
+    fmt.Fprintf(&out, "%s: ", err.GetName())
+
+    // Get informations
+    message := err.GetMessage()
+    source := err.GetSource()
+    data := err.GetData()
+
     // Prints error informations
-    fmt.Fprintln(&out, self.source)
-    fmt.Fprint(&out, &self.infos)
+    if message != "" {
+        fmt.Fprintln(&out, message)
+
+        if data != nil {
+            fmt.Fprintln(&out, data)
+        }
+
+        if source != nil {
+            fmt.Fprintln(&out)
+            fmt.Fprintln(&out, "Source:", source)
+        }
+    } else {
+        if source != nil {
+            fmt.Fprintln(&out, source)
+        }
+
+        if data != nil {
+            fmt.Fprintln(&out, data)
+        }
+    }
 
     // Prints stack trace
-    for _, line := range self.trace {
-        fmt.Fprintln(&out, "   ", line)
+    for _, entry := range self.trace {
+        fmt.Fprintln(&out, "   ", entry)
     }
 
     // Prints a separator if stack trace is not empty
@@ -45,85 +74,181 @@ func (self *tError) Error() string {
     return out.String()
 }
 
-// Add informations in extended Go error
-func (self *tError) AddInfo(info string, args ...interface{}) GoError {
-    // Just prints into internal buffer the informations passed as parameters
-    fmt.Fprintln(&self.infos, fmt.Sprintf(info, args...))
+// Get error name
+func (self *GoError) GetName() string {
+    return self.err_type.PkgPath() + "." + self.err_type.Name()
+}
+
+// Get cause error (parent error)
+func (self *GoError) GetSource() error {
+    return self.source
+}
+
+// Get error message
+func (self *GoError) GetMessage() string {
+    return self.message
+}
+
+// Get custon data
+func (self *GoError) GetData() interface{} {
+    return self.data
+}
+
+// Complete try/catch/finally block
+func (self *GoError) Try(try, catch, finally ErrorHandler) (err error) {
+    defer self.Catch(&err, catch, finally)
+
+    return try(self.get_reference())
+}
+
+// Catch error (used as a defered call)
+func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
+    recovered := recover()
+    res_err, ok := recovered.(error)
+    if !ok {
+        panic(recovered)
+    }
+
+    defer func() {
+        if finally != nil {
+            ierr, _ := res_err.(IError)
+
+            res_err = finally(ierr)
+        }
+
+        if err != nil {
+            *err = res_err
+        }
+    }()
+
+    this := self.get_reference()
+    if !this.IsParentOf(res_err) {
+        if err == nil {
+            panic(recovered)
+        }
+
+        return
+    }
+
+    if catch != nil {
+        res_err = catch(res_err.(IError))
+    }
+}
+
+// Raise error
+func (self *GoError) Raise() {
+    panic(self.get_reference())
+}
+
+// Test if this error is one of parents of error `err` passed in parameter
+func (self *GoError) IsParentOf(err error) bool {
+    gerr, ok := err.(IError)
+    if !ok {
+        return false
+    }
+
+    name := self.GetName()
+
+    for _, parent := range gerr.get_parents() {
+        if parent == name {
+            return true
+        }
+    }
+
+    return false
+}
+
+func (self *GoError) Init(value interface{}, message string, data interface{}, source error, prune_levels int) IError {
+    self.set_type(value)
+
+    self.message = message
+    self.data = data
+    self.source = source
+
+    self.populate_stack_trace(prune_levels)
 
     return self
 }
 
-// Error decorator
-// Constructs an extended Go error from an existing error
-func decorate_error(err error, prune_levels int) GoError {
-    // If error is nil, therefore returns nil
-    if err == nil {
-        return nil
+func (self *GoError) set_type(value interface{}) {
+    err_type := reflect.ValueOf(value).Type()
+    if err_type.Kind() == reflect.Ptr {
+        err_type = err_type.Elem()
     }
 
-    // Checks that pruned levels passed in parameted is really a positive value
-    // A negative value means, no pruning
-    if prune_levels < 0 {
-        prune_levels = 0
+    self.err_type = err_type
+}
+
+// Get the real reference on this error
+func (self *GoError) get_reference() IError {
+    if self.err_type == nil {
+        self.set_type(self)
     }
 
-    // Program Counter initialisation
-    var pc uintptr = 1
+    ptr := unsafe.Pointer(reflect.ValueOf(self).Pointer())
 
-    // Resulting stack trace
-    stack := make([]string, 0)
+    return reflect.NewAt(self.err_type, ptr).Interface().(IError)
+}
 
-    // If we are in debugging mode,
+// This method construct the stack trace only in 'Debug' Mode
+func (self *GoError) populate_stack_trace(prune_levels int) {
+    // If we aren't in debugging mode,
     if err_debug {
-        // Populate the stack trace
-        for i := prune_levels + 2; pc != 0; i++ {
-            // Retreive runtime informations
-            ptr, file, line, ok := runtime.Caller(i)
-            pc = ptr
-
-            // If there isn't significant information, go to next level
-            if (pc == 0) || (!ok) {
-                continue
-            }
-
-            // Retreive called function
-            f := runtime.FuncForPC(pc)
-
-            // Add stack trace entry
-            stack = append(stack, fmt.Sprintf("%s (%s:%d)", f.Name(), file, line))
-        }
+        // Do nothing
+        return
     }
 
-    // Finalize by constructing the resulting extended Go error
-    return &tError{
-        source: err,
-        trace:  stack,
-    }
+    self.trace = _make_stacktrace(prune_levels)
 }
 
-// «Decorate» the error passed as "err" parameter.
-// The error returned will be an extended Go error with additionnal informations and stack trace.
-func DecorateError(err error) GoError {
-    return decorate_error(err, -1)
-}
+// Get type of this error
+func (self *GoError) get_parents() []string {
+    name := self.GetName()
+    res, ok := error_hierarchies[name]
 
-// Make an extended Go error from a message passed as "message" parameter
-func MakeError(message string, args ...interface{}) GoError {
-    // make a standard error with fmt.Errorf, then decorate it with pruning one level in stack trace
-    // (to eliminate this function calling)
-    return decorate_error(fmt.Errorf(message, args...), -1)
-}
-
-// Global function to add information in an error whatever.
-// This function just call the "AddInfo" method of an extended Go error.
-func AddInfo(err error, info string, args ...interface{}) GoError {
-    // Check if "err" is already an extended Go error
-    go_err, ok := err.(GoError)
     if !ok {
-        // Otherwise decorate that unknown error
-        go_err = DecorateError(err)
+        res = get_parents(self.get_reference(), reflect.TypeOf(self).Elem())
+        error_hierarchies[name] = res
     }
 
-    // Delegate call to "AddInfo" method
-    return go_err.AddInfo(info, args...)
+    return res
+}
+
+// Interface for extended Go errors
+type IError interface {
+    // This is an error
+    error
+
+    // Get error name
+    GetName() string
+
+    // Get original error
+    GetSource() error
+
+    // Get error message
+    GetMessage() string
+
+    // Get custon data
+    GetData() interface{}
+
+    // Complete try/catch/finally block
+    Try(try, catch, finally ErrorHandler) error
+
+    // Catch error (used as a defered call)
+    Catch(err *error, catch, finally ErrorHandler)
+
+    // Raise error
+    Raise()
+
+    // Test if this error is one of parents of error `err` passed in parameter
+    IsParentOf(err error) bool
+
+    // Get the real reference on this error
+    get_reference() IError
+
+    // This method construct the stack trace only in 'Debug' Mode
+    populate_stack_trace(prune_levels int)
+
+    // Get type of this error
+    get_parents() []string
 }

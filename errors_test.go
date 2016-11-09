@@ -26,7 +26,7 @@ func TestAddInfo(t *testing.T) {
 
     err = AddInfo(err, "%s:%d", id, r)
 
-    raw_err, ok := err.(*tError)
+    raw_err, ok := err.(*GoError)
     if !ok {
         t.Error("Failed on convesion")
     }
@@ -49,7 +49,7 @@ func TestMakeErrorNoDebug(t *testing.T) {
     r := rand.Int63()
     id := uuid.NewUUID()
 
-    err := MakeError("%s:%d", id, r).(*tError)
+    err := MakeError("%s:%d", id, r).(*GoError)
     if err.source.Error() != fmt.Sprintf("%s:%d", id, r) {
         t.Error("Failed on MakeError:", err.source.Error(), "!=", fmt.Sprintf("%s:%d", id, r))
     }
@@ -66,7 +66,7 @@ func TestMakeErrorNoDebug(t *testing.T) {
 func TestMakeErrorDebug(t *testing.T) {
     SetDebug(true)
 
-    err := MakeError("").(*tError)
+    err := MakeError("").(*GoError)
     if len(err.trace) == 0 {
         t.Error("Failed on stack trace")
     }

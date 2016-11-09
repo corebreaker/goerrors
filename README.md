@@ -1,7 +1,12 @@
-# goerrors
-Easy error extended informations for Go.
+# GoErrors - Easy extended Go error with rich informations.
+It's a package that's allow you to make Go errors more comprehensive and easier to use.
 
-It's a package that's allow you to make Go errors more comprehensive and more usable.
+- Verbose with stack trace
+- Ready for Try/Catch/Finally paradigm
+- Extensible with your own error
+- Entirely customizable
+
+[![GoDoc](https://godoc.org/github.com/corebreaker/goerrors?status.svg)](https://godoc.org/github.com/corebreaker/goerrors)
 
 
 ## Installation
