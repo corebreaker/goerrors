@@ -1,8 +1,18 @@
 package goerrors
 
 import (
+    "fmt"
     "reflect"
+    "runtime"
 )
+
+func _list_len(l []string) int {
+    if l == nil {
+        return 0
+    }
+
+    return len(l)
+}
 
 // Concatenate 2 string lists
 func _concat(l1, l2 []string) []string {
@@ -47,7 +57,7 @@ func _get_parents(this_type, final_type reflect.Type) []string {
             continue
         }
 
-        parents := get_parents(field.Type, final_type)
+        parents := _get_parents(field.Type, final_type)
         if len(parents) > 0 {
             list = _concat(list, parents)
         }
@@ -92,5 +102,6 @@ func _make_stacktrace(prune_levels int) []string {
         trace = append(trace, fmt.Sprintf("%s (%s:%d)", f.Name(), file, line))
     }
 
+    // Returns stack trace
     return trace
 }

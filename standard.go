@@ -12,7 +12,7 @@ type IStandardError interface {
     IError
 
     // Add more informations on that error
-    AddInfo(info string, args ...interface{}) IError
+    AddInfo(info string, args ...interface{}) IStandardError
 
     // Get error code
     GetCode() int64
@@ -34,9 +34,17 @@ func (self *tStandardError) AddInfo(info string, args ...interface{}) IStandardE
     return self
 }
 
+func (self *tStandardError) GetCode() int64 {
+    return self.code
+}
+
 // «Decorate» the error passed as "err" parameter.
 // The error returned will be an standard error with additionnal informations and stack trace.
 func DecorateError(err error) IStandardError {
+    if err == nil {
+        return nil
+    }
+
     res := new(tStandardError)
     res.Init(res, "", nil, err, -1)
 
@@ -45,6 +53,10 @@ func DecorateError(err error) IStandardError {
 
 // Like `DecorateError` with error code and custom data
 func DecorateErrorWithInfos(err error, error_code int64, custom_data interface{}) IStandardError {
+    if err == nil {
+        return nil
+    }
+
     res := &tStandardError{code: error_code}
     res.Init(res, "", nil, err, -1)
 
@@ -54,7 +66,7 @@ func DecorateErrorWithInfos(err error, error_code int64, custom_data interface{}
 // Make an standard error from a message passed as "message" parameter
 func MakeError(message string, args ...interface{}) IStandardError {
     res := new(tStandardError)
-    res.Init(fmt.Sprintf(message, args...), "", nil, err, -1)
+    res.Init(res, fmt.Sprintf(message, args...), nil, nil, -1)
 
     return res
 }
@@ -62,7 +74,7 @@ func MakeError(message string, args ...interface{}) IStandardError {
 // Like `MakeError` with error code and custom data
 func MakeErrorWithInfos(error_code int64, data interface{}, message string, args ...interface{}) IStandardError {
     res := &tStandardError{code: error_code}
-    res.Init(fmt.Sprintf(message, args...), "", nil, err, -1)
+    res.Init(res, fmt.Sprintf(message, args...), data, nil, -1)
 
     return res
 }
@@ -81,12 +93,8 @@ func AddInfo(err error, info string, args ...interface{}) IStandardError {
     return go_err.AddInfo(info, args...)
 }
 
-func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
-    recovered := recover()
-    res_err, ok := recovered.(error)
-    if !ok {
-        panic(recovered)
-    }
+func Catch(err *error, catch, finally ErrorHandler) {
+    var res_err error = nil
 
     defer func() {
         if finally != nil {
@@ -100,34 +108,73 @@ func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
         }
     }()
 
-    this := self.get_reference()
-    if !this.IsParentOf(res_err) {
-        if err == nil {
-            panic(recovered)
-        }
-
+    recovered := recover()
+    if recovered == nil {
         return
     }
 
-    if catch != nil {
-        res_err = catch(res_err.(IError))
+    var ok bool
+
+    res_err, ok = recovered.(error)
+    if !ok {
+        panic(recovered)
+    }
+
+    if catch == nil {
+        return
+    }
+
+    ierr, ok := res_err.(IError)
+    if !ok {
+        ierr = DecorateError(res_err)
+    }
+
+    cerr := catch(ierr)
+    if cerr != nil {
+        res_err = cerr
     }
 }
 
-func Try(try, catch, finally ErrorHandler) error {
+func Try(try, catch, finally ErrorHandler) (err error) {
     defer func() {
+        if finally == nil {
+            return
+        }
 
-    }
+        ierr, _ := err.(IError)
+
+        ferr := finally(ierr)
+        if ferr != nil {
+            err = ferr
+        }
+    }()
+
+    defer func() {
+        recovered := recover()
+        if (recovered == nil) || (catch == nil) {
+            return
+        }
+
+        ierr, ok := recovered.(IError)
+        if !ok {
+            ierr = DecorateError(err)
+        }
+
+        cerr := catch(ierr)
+        if cerr != nil {
+            err = cerr
+        }
+    }()
 
     return try(nil)
 }
 
 func Raise(message string, args ...interface{}) {
-    panic(MakeError(message, args...))
+    MakeError(message, args...).raise(-1)
 }
 
 func RaiseWithInfos(error_code int64, data interface{}, message string, args ...interface{}) {
-    panic(MakeErrorWithInfos(error_code, data, message, args...))
+    MakeErrorWithInfos(error_code, data, message, args...).raise(-1)
 }
 
 func RaiseError(err error) {
@@ -136,5 +183,5 @@ func RaiseError(err error) {
         gerr = DecorateError(err)
     }
 
-    panic(err)
+    gerr.raise(-1)
 }
