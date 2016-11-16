@@ -103,11 +103,7 @@ func (self *GoError) Try(try, catch, finally ErrorHandler) (err error) {
 
 // Catch error (used as a defered call)
 func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
-    recovered := recover()
-    res_err, ok := recovered.(error)
-    if !ok {
-        panic(recovered)
-    }
+    var res_err error = nil
 
     defer func() {
         if finally != nil {
@@ -121,8 +117,18 @@ func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
         }
     }()
 
-    this := self.get_reference()
-    if !this.IsParentOf(res_err) {
+    recovered := recover()
+    if recovered == nil {
+        return
+    }
+
+    var ok bool
+
+    if res_err, ok = recovered.(error); !ok {
+        panic(recovered)
+    }
+
+    if this := self.get_reference(); !this.IsParentOf(res_err) {
         if err == nil {
             panic(recovered)
         }
@@ -137,7 +143,7 @@ func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
 
 // Raise error
 func (self *GoError) Raise() {
-    panic(self.get_reference())
+    self.raise(-1)
 }
 
 // Test if this error is one of parents of error `err` passed in parameter
@@ -168,6 +174,17 @@ func (self *GoError) Init(value interface{}, message string, data interface{}, s
     self.populate_stack_trace(prune_levels)
 
     return self
+}
+
+func (self *GoError) raise(prune_levels int) {
+    if prune_levels < 0 {
+        prune_levels = 0
+    }
+
+    res := self.get_reference()
+    res.populate_stack_trace(prune_levels + 1)
+
+    panic(res)
 }
 
 func (self *GoError) set_type(value interface{}) {
@@ -207,7 +224,7 @@ func (self *GoError) get_parents() []string {
     res, ok := error_hierarchies[name]
 
     if !ok {
-        res = get_parents(self.get_reference(), reflect.TypeOf(self).Elem())
+        res = _get_type_hierarchy(self.err_type, reflect.TypeOf(self).Elem())
         error_hierarchies[name] = res
     }
 
@@ -251,4 +268,7 @@ type IError interface {
 
     // Get type of this error
     get_parents() []string
+
+    // Raise error with pruned levels
+    raise(prune_levels int)
 }
