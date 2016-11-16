@@ -35,9 +35,9 @@ func _concat(l1, l2 []string) []string {
     return res
 }
 
-// Get parent types from an error type passed as `this_type` parameter.
+// Get type hierarchy from an error type passed as `this_type` parameter.
 // The `final_type` parameter represents type of `GoError` structure.
-func _get_parents(this_type, final_type reflect.Type) []string {
+func _get_type_hierarchy(this_type, final_type reflect.Type) []string {
     if (this_type == nil) || (this_type.Kind() != reflect.Struct) {
         return []string{}
     }
@@ -57,7 +57,7 @@ func _get_parents(this_type, final_type reflect.Type) []string {
             continue
         }
 
-        parents := _get_parents(field.Type, final_type)
+        parents := _get_type_hierarchy(field.Type, final_type)
         if len(parents) > 0 {
             list = _concat(list, parents)
         }

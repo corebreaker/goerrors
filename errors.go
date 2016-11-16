@@ -224,7 +224,7 @@ func (self *GoError) get_parents() []string {
     res, ok := error_hierarchies[name]
 
     if !ok {
-        res = _get_parents(self.err_type, reflect.TypeOf(self).Elem())
+        res = _get_type_hierarchy(self.err_type, reflect.TypeOf(self).Elem())
         error_hierarchies[name] = res
     }
 
