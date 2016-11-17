@@ -3,44 +3,60 @@ package goerrors
 import (
     "fmt"
     "math/rand"
+    "reflect"
     "testing"
     "time"
 
     "github.com/go-xweb/uuid"
 )
 
-func TestDecorateError(t *testing.T) {
-    if DecorateError(nil) != nil {
+type MyError struct {
+    GoError
+}
+
+var (
+    __err_test MyError
+    __err_type = reflect.TypeOf(__err_test)
+)
+
+func same_ptr(v1, v2 interface{}) bool {
+    return reflect.ValueOf(v1).Pointer() == reflect.ValueOf(v2).Pointer()
+}
+
+func TestSetType(t *testing.T) {
+    gerr := new(MyError)
+    gerr.set_type(gerr)
+
+    if gerr.err_type != __err_type {
         t.Fail()
     }
 }
 
-func TestAddInfo(t *testing.T) {
-    err := fmt.Errorf("")
+func TestInitError(t *testing.T) {
+    src := fmt.Errorf("")
+    data := new(int)
 
-    moment := time.Now()
-    rand.Seed(moment.UnixNano())
+    gerr := new(MyError)
+    gerr.Init(gerr, "--message--", data, src, -1)
 
-    r := rand.Int63()
-    id := uuid.NewUUID()
-
-    err = AddInfo(err, "%s:%d", id, r)
-
-    raw_err, ok := err.(*tStandardError)
-    if !ok {
-        t.Error("Failed on convesion")
+    if gerr.err_type != __err_type {
+        t.Error("Bad type")
     }
 
-    if raw_err.infos.Len() == 0 {
-        t.Error("Failed on has-infos")
+    if gerr.message != "--message--" {
+        t.Error("Bad message")
     }
 
-    if raw_err.infos.String() != fmt.Sprintf("%s:%d\n", id, r) {
-        t.Error("Failed on set-infos:", raw_err.infos.String(), "!=", fmt.Sprintf("%s:%d\n", id, r))
+    if !same_ptr(gerr.data, data) {
+        t.Error("Bad data")
+    }
+
+    if !same_ptr(gerr.source, src) {
+        t.Error("Bad data")
     }
 }
 
-func TestMakeErrorNoDebug(t *testing.T) {
+func TestShowErrorNoDebug(t *testing.T) {
     SetDebug(false)
 
     moment := time.Now()
@@ -63,7 +79,7 @@ func TestMakeErrorNoDebug(t *testing.T) {
     }
 }
 
-func TestMakeErrorDebug(t *testing.T) {
+func TestShowErrorDebug(t *testing.T) {
     SetDebug(true)
 
     err := MakeError("").(*tStandardError)
@@ -72,7 +88,7 @@ func TestMakeErrorDebug(t *testing.T) {
     }
 }
 
-func TestError(t *testing.T) {
+func TestErrorMethods(t *testing.T) {
     SetDebug(true)
 
     err := MakeError("")
