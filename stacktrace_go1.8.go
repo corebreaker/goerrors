@@ -19,7 +19,7 @@ func getTrace(start uint) []string {
 	// Populates the stack trace.
 	for i := 1 + start; pc != 0; i++ {
 		// Retreives runtime informations.
-		ptr, file, line, ok := runtime.Caller(i)
+		ptr, file, line, ok := runtime.Caller(int(i))
 		pc = ptr
 
 		// If there isn't significant information, go to next level.

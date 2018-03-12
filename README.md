@@ -1,4 +1,8 @@
 # GoErrors - Easy error informations and stack traces for Go with rich informations and a Try/Catch/Finally mechanism.
+[![Build Status](https://img.shields.io/travis/corebreaker/goerrors/master.svg?style=plastic)](https://travis-ci.org/corebreaker/goerrors)
+[![Coverage Status](https://img.shields.io/coveralls/github/corebreaker/goerrors/master.svg?style=plastic)](https://coveralls.io/github/corebreaker/goerrors)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=plastic)](https://godoc.org/github.com/corebreaker/goerrors)
+[![Release](https://img.shields.io/github/release/corebreaker/goerrors.svg?style=plastic)](https://github.com/corebreaker/goerrors/releases)
 
 It's a package that's allow you to make Go errors more comprehensive, more featured and easier to use.
 
