@@ -45,13 +45,13 @@ type IError interface {
 	get_reference() IError
 
 	// This method construct the stack trace only in 'Debug' Mode
-	populateStackTrace(prune_levels int)
+	populateStackTrace(prune_levels uint)
 
 	// Get type of this error
 	get_parents() []string
 
 	// Raise error with pruned levels
-	raise(prune_levels int)
+	raise(prune_levels uint)
 }
 
 // Handler for executing Try, Catch, or Finally block
@@ -187,7 +187,7 @@ func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
 
 // Raise error
 func (self *GoError) Raise() {
-	self.raise(-1)
+	self.raise(1)
 }
 
 // Test if this error is one of parents of error `err` passed in parameter
@@ -208,7 +208,7 @@ func (self *GoError) IsParentOf(err error) bool {
 	return false
 }
 
-func (self *GoError) Init(value interface{}, message string, data interface{}, source error, prune_levels int) IError {
+func (self *GoError) Init(value interface{}, message string, data interface{}, source error, prune_levels uint) IError {
 	if self.err_type == nil {
 		self.set_type(value)
 
@@ -222,7 +222,7 @@ func (self *GoError) Init(value interface{}, message string, data interface{}, s
 	return self
 }
 
-func (self *GoError) raise(prune_levels int) {
+func (self *GoError) raise(prune_levels uint) {
 	if prune_levels < 0 {
 		prune_levels = 0
 	}
@@ -254,7 +254,7 @@ func (self *GoError) get_reference() IError {
 }
 
 // This method construct the stack trace only in 'Debug' Mode
-func (self *GoError) populateStackTrace(prune_levels int) {
+func (self *GoError) populateStackTrace(prune_levels uint) {
 	// If we aren't in debugging mode,
 	if !errDebug {
 		// Do nothing

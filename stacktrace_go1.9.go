@@ -12,7 +12,7 @@ import (
 const STACKTRACE_MAXLEN = 65536
 
 // Construct formated stack trace.
-func getTrace(start int) []string {
+func getTrace(start uint) []string {
 	// The resulting stack trace.
 	var trace []string
 
@@ -20,7 +20,7 @@ func getTrace(start int) []string {
 	callers := make([]uintptr, STACKTRACE_MAXLEN)
 
 	// Gets the caller list, and returns an empty stack trace if there is no caller.
-	n := runtime.Callers(start+2, callers)
+	n := runtime.Callers(int(start+1), callers)
 	if n == 0 {
 		return trace
 	}

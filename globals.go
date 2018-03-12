@@ -19,7 +19,7 @@ func CheckedMain(handler MainHandler) {
 		var sent_err error = nil
 
 		err := new(GoError)
-		err.Init(err, "", nil, nil, -1)
+		err.Init(err, "", nil, nil, 1)
 
 		err.Catch(&sent_err, uncatchedErrorHandler, nil)
 

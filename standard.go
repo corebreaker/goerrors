@@ -48,7 +48,7 @@ func DecorateError(err error) IStandardError {
 	ierr, ok := err.(IStandardError)
 	if !ok {
 		res := new(tStandardError)
-		res.Init(res, "", nil, err, -1)
+		res.Init(res, "", nil, err, 1)
 
 		ierr = res
 	}
@@ -191,11 +191,11 @@ func Try(try, catch, finally ErrorHandler) (err error) {
 }
 
 func Raise(message string, args ...interface{}) {
-	MakeError(message, args...).raise(-1)
+	MakeError(message, args...).raise(1)
 }
 
 func RaiseWithInfos(error_code int64, data interface{}, message string, args ...interface{}) {
-	MakeErrorWithDatas(error_code, data, message, args...).raise(-1)
+	MakeErrorWithDatas(error_code, data, message, args...).raise(1)
 }
 
 func RaiseError(err error) {
@@ -204,5 +204,5 @@ func RaiseError(err error) {
 		gerr = DecorateError(err)
 	}
 
-	gerr.raise(-1)
+	gerr.raise(1)
 }
