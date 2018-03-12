@@ -96,3 +96,8 @@ func TestErrorMethods(t *testing.T) {
 		t.Error("Failed on infos")
 	}
 }
+
+func TestGetSource(t *testing.T) {
+	GetSource(nil)
+	GetSource(DecorateError(fmt.Errorf("Error")))
+}

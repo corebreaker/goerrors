@@ -276,3 +276,13 @@ func (self *GoError) get_parents() []string {
 
 	return res
 }
+
+// GetSource
+func GetSource(err error) error {
+	ierr, ok := err.(IError)
+	if !ok {
+		return nil
+	}
+
+	return ierr.GetSource()
+}
