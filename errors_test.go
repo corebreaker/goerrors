@@ -37,7 +37,7 @@ func TestInitError(t *testing.T) {
 	data := new(int)
 
 	gerr := new(MyError)
-	gerr.Init(gerr, "--message--", data, src, -1)
+	gerr.Init(gerr, "--message--", data, src, 0)
 
 	if gerr.err_type != __err_type {
 		t.Error("Bad type")
