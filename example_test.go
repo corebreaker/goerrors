@@ -1,59 +1,67 @@
-package goerrors_test
+package goerrors
 
 import (
-    "fmt"
-    "os"
-
-    "github.com/corebreaker/goerrors"
+	"fmt"
+	"os"
 )
 
 func Example() {
-    // A function which open a file
-    open_file := func(name string) (*os.File, error) {
-        f, err := os.Open(name)
+	// A function which open a file
+	open_file := func(name string) (*os.File, error) {
+		f, err := os.Open(name)
 
-        // Decorate the opening error
-        if err != nil {
-            return nil, goerrors.DecorateError(err)
-        }
+		// Decorate the opening error
+		if err != nil {
+			return nil, DecorateError(err)
+		}
 
-        return f, nil
-    }
+		return f, nil
+	}
 
-    // A function which read one byte in the opened file
-    read_file := func(f *os.File) (byte, error) {
-        var b [1]byte
+	// A function which read one byte in the opened file
+	read_file := func(f *os.File) (byte, error) {
+		var b [1]byte
 
-        n, err := f.Read(b[:])
+		n, err := f.Read(b[:])
 
-        // Decorate the read error
-        if err != nil {
-            return 0, goerrors.DecorateError(err)
-        }
+		// Decorate the read error
+		if err != nil {
+			return 0, DecorateError(err)
+		}
 
-        // Return custom error
-        if n == 0 {
-            return 0, goerrors.MakeError("No data to read")
-        }
+		// Return custom error
+		if n == 0 {
+			return 0, MakeError("No data to read")
+		}
 
-        return b[0], nil
-    }
+		return b[0], nil
+	}
 
-    // Activate stack trace
-    goerrors.SetDebug(true)
+	// Deactivate stack trace
+	// (cause stacktrace produced for testing package is specific to go installation and may change with Go version)
+	SetDebug(false)
 
-    // Call the checked open function
-    f, err := open_file("a_file.txt")
-    if err != nil {
-        fmt.Fprintln(os.Stderr, err)
+	// Make an unfindable filename
+	const name = ".a_file_5123351069599224559.txt"
 
-        return
-    }
+	// Call the checked open function
+	f, err := open_file(name)
+	if err != nil {
+		fmt.Println(err)
 
-    // Here, in this example, this code won't never be executed if the file can't be opened
-    defer f.Close()
+		return
+	}
 
-    _, err = read_file(f)
+	// Here, in this example, this code won't never be executed if the file can't be opened
+	defer f.Close()
 
-    // Output:
+	_, err = read_file(f)
+	if err != nil {
+		fmt.Println(err)
+
+		return
+	}
+
+	// Output:
+	// github.com/corebreaker/goerrors.tStandardError: open .a_file_5123351069599224559.txt: no such file or directory
 }
