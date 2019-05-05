@@ -1,6 +1,7 @@
 package goerrors
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -27,6 +28,15 @@ func TestCheckedMain(t *testing.T) {
 	})
 
 	SetUncatchedErrorHandler(func(err IError) error { return nil })
+
+	CheckedMain(func() error {
+		panic("error")
+
+		return nil
+	})
+
+	SetUncatchedErrorHandler(func(err IError) error { return errors.New("error") })
+
 	CheckedMain(func() error {
 		Raise("error")
 

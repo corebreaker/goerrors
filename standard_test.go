@@ -156,7 +156,7 @@ func TestCatch(t *testing.T) {
 	})
 }
 
-func TestTry(t *testing.T) {
+func TestStdTry(t *testing.T) {
 	err := Try(func(err IError) error {
 		return nil
 	}, nil, nil)
@@ -186,7 +186,7 @@ func TestTry(t *testing.T) {
 	}, nil)
 }
 
-func TestRaise(t *testing.T) {
+func TestStdRaise(t *testing.T) {
 	func() {
 		defer DiscardPanic()
 

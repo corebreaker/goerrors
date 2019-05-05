@@ -1,6 +1,7 @@
 package goerrors
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -24,7 +25,7 @@ func samePtr(v1, v2 interface{}) bool {
 }
 
 func TestSetType(t *testing.T) {
-	gerr := new(MyError)
+	gerr := &MyError{}
 	gerr.setType(gerr)
 
 	if gerr.errType != __errType {
@@ -36,7 +37,7 @@ func TestInitError(t *testing.T) {
 	src := fmt.Errorf("")
 	data := new(int)
 
-	gerr := new(MyError)
+	gerr := MyError{}
 	_ = gerr.Init(gerr, "--message--", data, src, 0)
 
 	if gerr.errType != __errType {
@@ -97,7 +98,81 @@ func TestErrorMethods(t *testing.T) {
 	}
 }
 
+func TestErrorString(t *testing.T) {
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", 1234, errors.New("error"), 0)
+
+	gerr.Error()
+
+	gerr.message = ""
+	gerr.Error()
+}
+
 func TestGetSource(t *testing.T) {
 	_ = GetSource(nil)
 	_ = GetSource(DecorateError(fmt.Errorf("error")))
+}
+
+func TestErrorTry(t *testing.T) {
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		return err
+	}, nil, func(err IError) error { return  nil })
+
+	_ = gerr.Try(func(err IError) error {
+		err.Raise()
+
+		return nil
+	}, func(err IError) error {
+		return err
+	}, nil)
+}
+
+func TestErrorCatchWithPrimitiveError(t *testing.T) {
+	defer DiscardPanic()
+
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		panic("error")
+
+		return nil
+	}, nil, nil)
+}
+
+func TestErrorCatchWithBasicError(t *testing.T) {
+	defer DiscardPanic()
+
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		panic(errors.New("error"))
+
+		return nil
+	}, nil, nil)
+}
+
+func TestErrorCatchWithOtherError(t *testing.T) {
+	defer DiscardPanic()
+
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		otherError := &struct{ GoError }{}
+
+		otherError.Init(otherError, "error", nil, nil, 0).Raise()
+
+		return nil
+	}, nil, nil)
+}
+
+func TestErrNakedRaise(t *testing.T) {
+	defer DiscardPanic()
+
+	(&MyError{}).raise(0)
 }

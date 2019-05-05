@@ -175,11 +175,7 @@ func (goErr *GoError) Catch(err *error, catch, finally ErrorHandler) {
 	}
 
 	if this := goErr.getReference(); !this.IsParentOf(resErr) {
-		if err == nil {
-			panic(recovered)
-		}
-
-		return
+		panic(recovered)
 	}
 
 	if catch != nil {
@@ -225,10 +221,6 @@ func (goErr *GoError) Init(value interface{}, message string, data interface{}, 
 }
 
 func (goErr *GoError) raise(pruneLevels uint) {
-	if pruneLevels < 0 {
-		pruneLevels = 0
-	}
-
 	res := goErr.getReference()
 	res.populateStackTrace(pruneLevels + 1)
 
