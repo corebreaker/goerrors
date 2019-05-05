@@ -27,15 +27,15 @@ type tStandardError struct {
 }
 
 // Add informations in standard error
-func (self *tStandardError) AddInfo(info string, args ...interface{}) IStandardError {
+func (se *tStandardError) AddInfo(info string, args ...interface{}) IStandardError {
 	// Just prints into internal buffer the informations passed as parameters
-	fmt.Fprintln(&self.infos, fmt.Sprintf(info, args...))
+	_, _ = fmt.Fprintln(&se.infos, fmt.Sprintf(info, args...))
 
-	return self
+	return se
 }
 
-func (self *tStandardError) GetCode() int64 {
-	return self.code
+func (se *tStandardError) GetCode() int64 {
+	return se.code
 }
 
 // «Decorate» the error passed as "err" parameter.
@@ -48,7 +48,7 @@ func DecorateError(err error) IStandardError {
 	ierr, ok := err.(IStandardError)
 	if !ok {
 		res := new(tStandardError)
-		res.Init(res, "", nil, err, 1)
+		_ = res.Init(res, "", nil, err, 1)
 
 		ierr = res
 	}
@@ -57,17 +57,17 @@ func DecorateError(err error) IStandardError {
 }
 
 // Like `DecorateError` with error code and custom data
-func DecorateErrorWithDatas(err error, code int64, data interface{}, message string, args ...interface{}) IStandardError {
+func DecorateErrorWithDatas(err error, code int64, data interface{}, msg string, args ...interface{}) IStandardError {
 	if err == nil {
 		return nil
 	}
 
 	ierr, ok := err.(IStandardError)
 	if ok {
-		ierr.AddInfo("Recorate for code=%d and message=%s", code, fmt.Sprintf(message, args...))
+		_ = ierr.AddInfo("Recorate for code=%d and message=%s", code, fmt.Sprintf(msg, args...))
 	} else {
 		res := &tStandardError{code: code}
-		res.Init(res, fmt.Sprintf(message, args...), data, err, 1)
+		_ = res.Init(res, fmt.Sprintf(msg, args...), data, err, 1)
 
 		ierr = res
 	}
@@ -78,7 +78,7 @@ func DecorateErrorWithDatas(err error, code int64, data interface{}, message str
 // Make an standard error from a message passed as "message" parameter
 func MakeError(message string, args ...interface{}) IStandardError {
 	res := new(tStandardError)
-	res.Init(res, fmt.Sprintf(message, args...), nil, nil, 1)
+	_ = res.Init(res, fmt.Sprintf(message, args...), nil, nil, 1)
 
 	return res
 }
@@ -86,7 +86,7 @@ func MakeError(message string, args ...interface{}) IStandardError {
 // Like `MakeError` with error code and custom data
 func MakeErrorWithDatas(code int64, data interface{}, message string, args ...interface{}) IStandardError {
 	res := &tStandardError{code: code}
-	res.Init(res, fmt.Sprintf(message, args...), data, nil, 1)
+	_ = res.Init(res, fmt.Sprintf(message, args...), data, nil, 1)
 
 	return res
 }
@@ -95,28 +95,28 @@ func MakeErrorWithDatas(code int64, data interface{}, message string, args ...in
 // This function just call the "AddInfo" method of an standard error.
 func AddInfo(err error, info string, args ...interface{}) IStandardError {
 	// Check if "err" is already an standard error
-	go_err, ok := err.(IStandardError)
+	goErr, ok := err.(IStandardError)
 	if !ok {
 		// Otherwise decorate that unknown error
-		go_err = DecorateError(err)
+		goErr = DecorateError(err)
 	}
 
 	// Delegate call to "AddInfo" method
-	return go_err.AddInfo(info, args...)
+	return goErr.AddInfo(info, args...)
 }
 
 func Catch(err *error, catch, finally ErrorHandler) {
-	var res_err error = nil
+	var resErr error = nil
 
 	defer func() {
 		if finally != nil {
-			ierr, _ := res_err.(IError)
+			ierr, _ := resErr.(IError)
 
-			res_err = finally(ierr)
+			resErr = finally(ierr)
 		}
 
 		if err != nil {
-			*err = res_err
+			*err = resErr
 		}
 	}()
 
@@ -127,7 +127,7 @@ func Catch(err *error, catch, finally ErrorHandler) {
 
 	var ok bool
 
-	res_err, ok = recovered.(error)
+	resErr, ok = recovered.(error)
 	if !ok {
 		panic(recovered)
 	}
@@ -136,14 +136,14 @@ func Catch(err *error, catch, finally ErrorHandler) {
 		return
 	}
 
-	ierr, ok := res_err.(IError)
+	ierr, ok := resErr.(IError)
 	if !ok {
-		ierr = DecorateError(res_err)
+		ierr = DecorateError(resErr)
 	}
 
 	cerr := catch(ierr)
 	if cerr != nil {
-		res_err = cerr
+		resErr = cerr
 	}
 }
 
@@ -168,11 +168,11 @@ func Try(try, catch, finally ErrorHandler) (err error) {
 		}
 
 		if err == nil {
-			recovered_error, ok := recovered.(error)
+			recoveredError, ok := recovered.(error)
 			if ok {
-				err = recovered_error
+				err = recoveredError
 			} else {
-				err = fmt.Errorf("Error: %s", recovered)
+				err = fmt.Errorf("error: %s", recovered)
 			}
 		}
 
@@ -194,8 +194,8 @@ func Raise(message string, args ...interface{}) {
 	MakeError(message, args...).raise(1)
 }
 
-func RaiseWithInfos(error_code int64, data interface{}, message string, args ...interface{}) {
-	MakeErrorWithDatas(error_code, data, message, args...).raise(1)
+func RaiseWithInfos(errorCode int64, data interface{}, message string, args ...interface{}) {
+	MakeErrorWithDatas(errorCode, data, message, args...).raise(1)
 }
 
 func RaiseError(err error) {

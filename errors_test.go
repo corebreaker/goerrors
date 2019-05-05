@@ -1,13 +1,14 @@
 package goerrors
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/go-xweb/uuid"
+	"github.com/google/uuid"
 )
 
 type MyError struct {
@@ -15,19 +16,19 @@ type MyError struct {
 }
 
 var (
-	__err_test MyError
-	__err_type = reflect.TypeOf(__err_test)
+	__errTest MyError
+	__errType = reflect.TypeOf(__errTest)
 )
 
-func same_ptr(v1, v2 interface{}) bool {
+func samePtr(v1, v2 interface{}) bool {
 	return reflect.ValueOf(v1).Pointer() == reflect.ValueOf(v2).Pointer()
 }
 
 func TestSetType(t *testing.T) {
-	gerr := new(MyError)
-	gerr.set_type(gerr)
+	gerr := &MyError{}
+	gerr.setType(gerr)
 
-	if gerr.err_type != __err_type {
+	if gerr.errType != __errType {
 		t.Fail()
 	}
 }
@@ -36,10 +37,10 @@ func TestInitError(t *testing.T) {
 	src := fmt.Errorf("")
 	data := new(int)
 
-	gerr := new(MyError)
-	gerr.Init(gerr, "--message--", data, src, 0)
+	gerr := MyError{}
+	_ = gerr.Init(gerr, "--message--", data, src, 0)
 
-	if gerr.err_type != __err_type {
+	if gerr.errType != __errType {
 		t.Error("Bad type")
 	}
 
@@ -47,11 +48,11 @@ func TestInitError(t *testing.T) {
 		t.Error("Bad message")
 	}
 
-	if !same_ptr(gerr.data, data) {
+	if !samePtr(gerr.data, data) {
 		t.Error("Bad data")
 	}
 
-	if !same_ptr(gerr.source, src) {
+	if !samePtr(gerr.source, src) {
 		t.Error("Bad data")
 	}
 }
@@ -63,7 +64,7 @@ func TestShowErrorNoDebug(t *testing.T) {
 	rand.Seed(moment.UnixNano())
 
 	r := rand.Int63()
-	id := uuid.NewUUID()
+	id := uuid.New()
 
 	err := MakeError("%s:%d", id, r).(*tStandardError)
 	if err.message != fmt.Sprintf("%s:%d", id, r) {
@@ -97,7 +98,81 @@ func TestErrorMethods(t *testing.T) {
 	}
 }
 
+func TestErrorString(t *testing.T) {
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", 1234, errors.New("error"), 0)
+
+	gerr.Error()
+
+	gerr.message = ""
+	gerr.Error()
+}
+
 func TestGetSource(t *testing.T) {
-	GetSource(nil)
-	GetSource(DecorateError(fmt.Errorf("Error")))
+	_ = GetSource(nil)
+	_ = GetSource(DecorateError(fmt.Errorf("error")))
+}
+
+func TestErrorTry(t *testing.T) {
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		return err
+	}, nil, func(err IError) error { return  nil })
+
+	_ = gerr.Try(func(err IError) error {
+		err.Raise()
+
+		return nil
+	}, func(err IError) error {
+		return err
+	}, nil)
+}
+
+func TestErrorCatchWithPrimitiveError(t *testing.T) {
+	defer DiscardPanic()
+
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		panic("error")
+
+		return nil
+	}, nil, nil)
+}
+
+func TestErrorCatchWithBasicError(t *testing.T) {
+	defer DiscardPanic()
+
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		panic(errors.New("error"))
+
+		return nil
+	}, nil, nil)
+}
+
+func TestErrorCatchWithOtherError(t *testing.T) {
+	defer DiscardPanic()
+
+	gerr := &MyError{}
+	_ = gerr.Init(gerr, "--message--", nil, nil, 0)
+
+	_ = gerr.Try(func(err IError) error {
+		otherError := &struct{ GoError }{}
+
+		otherError.Init(otherError, "error", nil, nil, 0).Raise()
+
+		return nil
+	}, nil, nil)
+}
+
+func TestErrNakedRaise(t *testing.T) {
+	defer DiscardPanic()
+
+	(&MyError{}).raise(0)
 }

@@ -9,7 +9,7 @@ import (
 
 var (
 	// Inheritance cache
-	error_hierarchies = make(map[string][]string)
+	errorHierarchies = make(map[string][]string)
 )
 
 // Interface for extended Go errors
@@ -42,16 +42,16 @@ type IError interface {
 	IsParentOf(err error) bool
 
 	// Get the real reference on this error
-	get_reference() IError
+	getReference() IError
 
 	// This method construct the stack trace only in 'Debug' Mode
-	populateStackTrace(prune_levels uint)
+	populateStackTrace(pruneLevels uint)
 
 	// Get type of this error
-	get_parents() []string
+	getParents() []string
 
 	// Raise error with pruned levels
-	raise(prune_levels uint)
+	raise(pruneLevels uint)
 }
 
 // Handler for executing Try, Catch, or Finally block
@@ -59,21 +59,21 @@ type ErrorHandler func(err IError) error
 
 // Basic error structure
 type GoError struct {
-	source   error        // Cause or original error
-	message  string       // Error message
-	trace    []string     // Stack trace
-	data     interface{}  // Custom data
-	err_type reflect.Type // Type of this error
+	source  error        // Cause or original error
+	message string       // Error message
+	trace   []string     // Stack trace
+	data    interface{}  // Custom data
+	errType reflect.Type // Type of this error
 }
 
 // Standard method of `error` interface
-func (self *GoError) Error() string {
+func (goErr *GoError) Error() string {
 	var out bytes.Buffer
 
-	err := self.get_reference()
+	err := goErr.getReference()
 
 	// Prints error name
-	fmt.Fprintf(&out, "%s: ", err.GetName())
+	_, _ = fmt.Fprintf(&out, "%s: ", err.GetName())
 
 	// Get informations
 	message := err.GetMessage()
@@ -82,35 +82,37 @@ func (self *GoError) Error() string {
 
 	// Prints error informations
 	if message != "" {
-		fmt.Fprintln(&out, message)
+		_, _ = fmt.Fprintln(&out, message)
 
 		if data != nil {
-			fmt.Fprintln(&out, data)
+			_, _ = fmt.Fprintln(&out, data)
 		}
 
 		if source != nil {
-			fmt.Fprintln(&out)
-			fmt.Fprintln(&out, "Source:", source)
+			_, _ = fmt.Fprintln(&out)
+			_, _ = fmt.Fprintln(&out, "Source:", source)
 		}
 	} else {
 		if source != nil {
-			fmt.Fprintln(&out, source)
+			_, _ = fmt.Fprintln(&out, source)
 		}
 
 		if data != nil {
-			fmt.Fprintln(&out, data)
+			_, _ = fmt.Fprintln(&out, data)
 		}
 	}
 
 	// Prints stack trace only in debug mode
 	if errDebug {
-		for _, entry := range self.trace {
-			fmt.Fprintln(&out, "   ", entry)
+		for _, entry := range goErr.trace {
+			_, _ = fmt.Fprintln(&out, "   ", entry)
 		}
 
 		// Prints a separator if stack trace is not empty
-		if len(self.trace) > 0 {
-			fmt.Fprintln(&out, "------------------------------------------------------------------------------")
+		if len(goErr.trace) > 0 {
+			const sep = "------------------------------------------------------------------------------"
+
+			_, _ = fmt.Fprintln(&out, sep)
 		}
 	}
 
@@ -119,45 +121,45 @@ func (self *GoError) Error() string {
 }
 
 // Get error name
-func (self *GoError) GetName() string {
-	return self.err_type.PkgPath() + "." + self.err_type.Name()
+func (goErr *GoError) GetName() string {
+	return goErr.errType.PkgPath() + "." + goErr.errType.Name()
 }
 
 // Get cause error (parent error)
-func (self *GoError) GetSource() error {
-	return self.source
+func (goErr *GoError) GetSource() error {
+	return goErr.source
 }
 
 // Get error message
-func (self *GoError) GetMessage() string {
-	return self.message
+func (goErr *GoError) GetMessage() string {
+	return goErr.message
 }
 
 // Get custon data
-func (self *GoError) GetData() interface{} {
-	return self.data
+func (goErr *GoError) GetData() interface{} {
+	return goErr.data
 }
 
 // Complete try/catch/finally block
-func (self *GoError) Try(try, catch, finally ErrorHandler) (err error) {
-	defer self.Catch(&err, catch, finally)
+func (goErr *GoError) Try(try, catch, finally ErrorHandler) (err error) {
+	defer goErr.Catch(&err, catch, finally)
 
-	return try(self.get_reference())
+	return try(goErr.getReference())
 }
 
 // Catch error (used as a defered call)
-func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
-	var res_err error = nil
+func (goErr *GoError) Catch(err *error, catch, finally ErrorHandler) {
+	var resErr error = nil
 
 	defer func() {
 		if finally != nil {
-			ierr, _ := res_err.(IError)
+			ierr, _ := resErr.(IError)
 
-			res_err = finally(ierr)
+			resErr = finally(ierr)
 		}
 
 		if err != nil {
-			*err = res_err
+			*err = resErr
 		}
 	}()
 
@@ -168,38 +170,34 @@ func (self *GoError) Catch(err *error, catch, finally ErrorHandler) {
 
 	var ok bool
 
-	if res_err, ok = recovered.(error); !ok {
+	if resErr, ok = recovered.(error); !ok {
 		panic(recovered)
 	}
 
-	if this := self.get_reference(); !this.IsParentOf(res_err) {
-		if err == nil {
-			panic(recovered)
-		}
-
-		return
+	if this := goErr.getReference(); !this.IsParentOf(resErr) {
+		panic(recovered)
 	}
 
 	if catch != nil {
-		res_err = catch(res_err.(IError))
+		resErr = catch(resErr.(IError))
 	}
 }
 
 // Raise error
-func (self *GoError) Raise() {
-	self.raise(1)
+func (goErr *GoError) Raise() {
+	goErr.raise(1)
 }
 
 // Test if this error is one of parents of error `err` passed in parameter
-func (self *GoError) IsParentOf(err error) bool {
+func (goErr *GoError) IsParentOf(err error) bool {
 	gerr, ok := err.(IError)
 	if !ok {
 		return false
 	}
 
-	name := self.GetName()
+	name := goErr.GetName()
 
-	for _, parent := range gerr.get_parents() {
+	for _, parent := range gerr.getParents() {
 		if parent == name {
 			return true
 		}
@@ -208,70 +206,66 @@ func (self *GoError) IsParentOf(err error) bool {
 	return false
 }
 
-func (self *GoError) Init(value interface{}, message string, data interface{}, source error, prune_levels uint) IError {
-	if self.err_type == nil {
-		self.set_type(value)
+func (goErr *GoError) Init(value interface{}, message string, data interface{}, source error, pruneLevels uint) IError {
+	if goErr.errType == nil {
+		goErr.setType(value)
 
-		self.message = message
-		self.data = data
-		self.source = source
+		goErr.message = message
+		goErr.data = data
+		goErr.source = source
 
-		self.populateStackTrace(prune_levels + 1)
+		goErr.populateStackTrace(pruneLevels + 1)
 	}
 
-	return self
+	return goErr
 }
 
-func (self *GoError) raise(prune_levels uint) {
-	if prune_levels < 0 {
-		prune_levels = 0
-	}
-
-	res := self.get_reference()
-	res.populateStackTrace(prune_levels + 1)
+func (goErr *GoError) raise(pruneLevels uint) {
+	res := goErr.getReference()
+	res.populateStackTrace(pruneLevels + 1)
 
 	panic(res)
 }
 
-func (self *GoError) set_type(value interface{}) {
-	err_type := reflect.ValueOf(value).Type()
-	if err_type.Kind() == reflect.Ptr {
-		err_type = err_type.Elem()
+func (goErr *GoError) setType(value interface{}) {
+	errType := reflect.ValueOf(value).Type()
+	if errType.Kind() == reflect.Ptr {
+		errType = errType.Elem()
 	}
 
-	self.err_type = err_type
+	goErr.errType = errType
 }
 
 // Get the real reference on this error
-func (self *GoError) get_reference() IError {
-	if self.err_type == nil {
-		self.set_type(self)
+func (goErr *GoError) getReference() IError {
+	if goErr.errType == nil {
+		goErr.setType(goErr)
 	}
 
-	ptr := unsafe.Pointer(reflect.ValueOf(self).Pointer())
+	ptr := unsafe.Pointer(reflect.ValueOf(goErr).Pointer())
 
-	return reflect.NewAt(self.err_type, ptr).Interface().(IError)
+	return reflect.NewAt(goErr.errType, ptr).Interface().(IError)
 }
 
 // This method construct the stack trace only in 'Debug' Mode
-func (self *GoError) populateStackTrace(prune_levels uint) {
+func (goErr *GoError) populateStackTrace(pruneLevels uint) {
 	// If we aren't in debugging mode,
 	if !errDebug {
 		// Do nothing
 		return
 	}
 
-	self.trace = getTrace(prune_levels + 1)
+	goErr.trace = getTrace(pruneLevels + 1)
 }
 
 // Get type of this error
-func (self *GoError) get_parents() []string {
-	name := self.GetName()
-	res, ok := error_hierarchies[name]
+func (goErr *GoError) getParents() []string {
+	name := goErr.GetName()
+	res, ok := errorHierarchies[name]
 
 	if !ok {
-		res = _getTypeHierarchy(self.err_type, reflect.TypeOf(self).Elem())
-		error_hierarchies[name] = res
+		res = _getTypeHierarchy(goErr.errType, reflect.TypeOf(goErr).Elem())
+		errorHierarchies[name] = res
 	}
 
 	return res

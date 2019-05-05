@@ -1,14 +1,8 @@
 language: go
 sudo: false
-os:
-  - linux
-  - osx
 go:
-  - "go1.7"
-  - "go1.8"
-  - "go1.9"
-  - "go1.10"
+- "go1.12"
 before_install:
-  - go get github.com/mattn/goveralls
+- go get github.com/mattn/goveralls
 script:
-  - "$GOPATH/bin/goveralls -service=travis-ci"
+- "$GOPATH/bin/goveralls -service=travis-ci"
