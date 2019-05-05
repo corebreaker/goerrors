@@ -1,11 +1,15 @@
 package goerrors
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 var (
+	logFatal = log.Fatal
 	uncatchedErrorHandler ErrorHandler = func(err IError) error {
 		if err != nil {
-			log.Fatal(err)
+			logFatal(err)
 		}
 
 		return nil
@@ -16,22 +20,35 @@ type MainHandler func() error
 
 func CheckedMain(handler MainHandler) {
 	defer func() {
-		var sent_err error = nil
+		recovered := recover()
+		if (recovered == nil) || (uncatchedErrorHandler == nil) {
+			return
+		}
 
-		err := new(GoError)
-		err.Init(err, "", nil, nil, 1)
+		var err error
 
-		err.Catch(&sent_err, uncatchedErrorHandler, nil)
+		recoveredError, ok := recovered.(error)
+		if ok {
+			err = recoveredError
+		} else {
+			err = fmt.Errorf("error: %s", recovered)
+		}
 
-		if sent_err != nil {
-			log.Fatal(sent_err)
+		ierr, ok := err.(IError)
+		if !ok {
+			ierr = DecorateError(err)
+		}
+
+		cerr := uncatchedErrorHandler(ierr)
+		if cerr != nil {
+			logFatal(cerr)
 		}
 	}()
 
 	err := handler()
 
 	if err != nil {
-		log.Fatal(err)
+		logFatal(err)
 	}
 }
 

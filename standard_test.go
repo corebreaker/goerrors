@@ -1,12 +1,13 @@
 package goerrors
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"testing"
 	"time"
 
-	"github.com/go-xweb/uuid"
+	"github.com/google/uuid"
 )
 
 func TestDecorateError(t *testing.T) {
@@ -22,21 +23,54 @@ func TestAddInfo(t *testing.T) {
 	rand.Seed(moment.UnixNano())
 
 	r := rand.Int63()
-	id := uuid.NewUUID()
+	id := uuid.New()
 
 	err = AddInfo(err, "%s:%d", id, r)
 
-	raw_err, ok := err.(*tStandardError)
+	rawErr, ok := err.(*tStandardError)
 	if !ok {
 		t.Error("Failed on convesion")
 	}
 
-	if raw_err.infos.Len() == 0 {
+	if rawErr.infos.Len() == 0 {
 		t.Error("Failed on has-infos")
 	}
 
-	if raw_err.infos.String() != fmt.Sprintf("%s:%d\n", id, r) {
-		t.Error("Failed on set-infos:", raw_err.infos.String(), "!=", fmt.Sprintf("%s:%d\n", id, r))
+	if rawErr.infos.String() != fmt.Sprintf("%s:%d\n", id, r) {
+		t.Error("Failed on set-infos:", rawErr.infos.String(), "!=", fmt.Sprintf("%s:%d\n", id, r))
+	}
+}
+
+func TestDecorateNilErrorWithDatas(t *testing.T) {
+	if DecorateErrorWithDatas(nil, 0, nil, "") != nil {
+		t.Fail()
+	}
+}
+
+func TestDecorateErrorWithDatas(t *testing.T) {
+	err := DecorateErrorWithDatas(errors.New("error"), 1234, "data", "hello %d", 1)
+	if err == nil {
+		t.Fatal("Error should not be nil")
+	}
+
+	err = DecorateErrorWithDatas(err, 1234, "data", "hello %d", 1)
+	if err == nil {
+		t.Fatal("Error should not be nil")
+	}
+}
+
+func TestErrorDecoration(t *testing.T) {
+	moment := time.Now()
+	rand.Seed(moment.UnixNano())
+
+	code := rand.Int63()
+
+	r := rand.Int63()
+	id := uuid.New()
+
+	err := MakeErrorWithDatas(code, nil, "%s:%d", id, r)
+	if err.GetCode() != code {
+		t.Fail()
 	}
 }
 
@@ -47,7 +81,7 @@ func TestMakeErrorNoDebug(t *testing.T) {
 	rand.Seed(moment.UnixNano())
 
 	r := rand.Int63()
-	id := uuid.NewUUID()
+	id := uuid.New()
 
 	err := MakeError("%s:%d", id, r).(*tStandardError)
 	if err.message != fmt.Sprintf("%s:%d", id, r) {
@@ -99,7 +133,7 @@ func TestCatch(t *testing.T) {
 			return err
 		})
 
-		panic(fmt.Errorf("Error"))
+		panic(fmt.Errorf("error"))
 	}()
 
 	func() {
@@ -112,7 +146,7 @@ func TestCatch(t *testing.T) {
 	func() {
 		defer Catch(&err, nil, nil)
 
-		panic(fmt.Errorf("Error"))
+		panic(fmt.Errorf("error"))
 	}()
 
 	Catch(&err, func(err IError) error {
@@ -123,25 +157,29 @@ func TestCatch(t *testing.T) {
 }
 
 func TestTry(t *testing.T) {
-	Try(func(err IError) error {
+	err := Try(func(err IError) error {
 		return nil
 	}, nil, nil)
 
-	Try(func(err IError) error {
-		return fmt.Errorf("Error")
+	if err != nil {
+		t.Fail()
+	}
+
+	err = Try(func(err IError) error {
+		return fmt.Errorf("error")
 	}, func(err IError) error {
 		return err
 	}, func(err IError) error {
 		return err
 	})
 
-	Try(func(err IError) error {
-		panic(fmt.Errorf("Error"))
+	err = Try(func(err IError) error {
+		panic(fmt.Errorf("error"))
 	}, func(err IError) error {
 		return err
 	}, nil)
 
-	Try(func(err IError) error {
+	err = Try(func(err IError) error {
 		panic("Error")
 	}, func(err IError) error {
 		return err
@@ -168,6 +206,6 @@ func TestRaiseError(t *testing.T) {
 	func() {
 		defer DiscardPanic()
 
-		RaiseError(fmt.Errorf("Error"))
+		RaiseError(fmt.Errorf("error"))
 	}()
 }

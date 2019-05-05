@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-xweb/uuid"
+	"github.com/google/uuid"
 )
 
 type MyError struct {
@@ -15,19 +15,19 @@ type MyError struct {
 }
 
 var (
-	__err_test MyError
-	__err_type = reflect.TypeOf(__err_test)
+	__errTest MyError
+	__errType = reflect.TypeOf(__errTest)
 )
 
-func same_ptr(v1, v2 interface{}) bool {
+func samePtr(v1, v2 interface{}) bool {
 	return reflect.ValueOf(v1).Pointer() == reflect.ValueOf(v2).Pointer()
 }
 
 func TestSetType(t *testing.T) {
 	gerr := new(MyError)
-	gerr.set_type(gerr)
+	gerr.setType(gerr)
 
-	if gerr.err_type != __err_type {
+	if gerr.errType != __errType {
 		t.Fail()
 	}
 }
@@ -37,9 +37,9 @@ func TestInitError(t *testing.T) {
 	data := new(int)
 
 	gerr := new(MyError)
-	gerr.Init(gerr, "--message--", data, src, 0)
+	_ = gerr.Init(gerr, "--message--", data, src, 0)
 
-	if gerr.err_type != __err_type {
+	if gerr.errType != __errType {
 		t.Error("Bad type")
 	}
 
@@ -47,11 +47,11 @@ func TestInitError(t *testing.T) {
 		t.Error("Bad message")
 	}
 
-	if !same_ptr(gerr.data, data) {
+	if !samePtr(gerr.data, data) {
 		t.Error("Bad data")
 	}
 
-	if !same_ptr(gerr.source, src) {
+	if !samePtr(gerr.source, src) {
 		t.Error("Bad data")
 	}
 }
@@ -63,7 +63,7 @@ func TestShowErrorNoDebug(t *testing.T) {
 	rand.Seed(moment.UnixNano())
 
 	r := rand.Int63()
-	id := uuid.NewUUID()
+	id := uuid.New()
 
 	err := MakeError("%s:%d", id, r).(*tStandardError)
 	if err.message != fmt.Sprintf("%s:%d", id, r) {
@@ -98,6 +98,6 @@ func TestErrorMethods(t *testing.T) {
 }
 
 func TestGetSource(t *testing.T) {
-	GetSource(nil)
-	GetSource(DecorateError(fmt.Errorf("Error")))
+	_ = GetSource(nil)
+	_ = GetSource(DecorateError(fmt.Errorf("error")))
 }
