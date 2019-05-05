@@ -26,6 +26,11 @@ type tStandardError struct {
 	infos bytes.Buffer // Additionnal informations
 }
 
+// Get standard error name
+func (goErr *tStandardError) GetName() string {
+	return "StandardError"
+}
+
 // Add informations in standard error
 func (se *tStandardError) AddInfo(info string, args ...interface{}) IStandardError {
 	// Just prints into internal buffer the informations passed as parameters

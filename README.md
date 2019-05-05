@@ -185,7 +185,7 @@ func main() {
 
 This will show:
 ```
-Division by zero
+StandardError: Division by zero
     main.my_func (/projects/go/prototype/main.go:11)
     main.main (/projects/go/prototype/main.go:23)
 ------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ import (
 )
 
 // A function which open a file
-func open_file(name string) (*os.File, error) {
+func openFile(name string) (*os.File, error) {
     f, err := os.Open(name)
 
     // Decorate the opening error
@@ -215,7 +215,7 @@ func open_file(name string) (*os.File, error) {
 }
 
 // A function which read one byte in the opened file
-func read_file(f *os.File) (byte, error) {
+func readFile(f *os.File) (byte, error) {
     var b [1]byte
 
     n, err := f.Read(b[:])
@@ -239,7 +239,7 @@ func main() {
     gerr.SetDebug(true)
 
     // Call the checked open function
-    f, err := open_file("a_file.txt")
+    f, err := openFile("a_file.txt")
     if err != nil {
         fmt.Println(err)
 
@@ -249,14 +249,80 @@ func main() {
     // Here, in this example, this code won't never be executed if the file can't be opened
     defer f.Close()
 
-    _, err = read_file(f)
+    _, err = readFile(f)
 }
 ```
 
 This will show:
 ```
-open a_file.txt: no such file or directory
+StandardError: open a_file.txt: no such file or directory
     main.open_file (/projects/go/src/github.com/corebreaker/goerrors.go:15)
     main.main (/projects/go/src/github.com/corebreaker/goerrors.go:46)
 ------------------------------------------------------------------------------
+```
+
+
+### A Try/Catch example with error inheritance
+```go
+package main
+
+import (
+    "fmt"
+    gerr "github.com/corebreaker/goerrors"
+)
+
+type ErrorBase struct{ gerr.GoError }
+
+type ErrorA struct{ ErrorBase }
+type ErrorB struct{ ErrorBase }
+
+type ChildError struct{ ErrorA }
+
+func newErrorBase() gerr.IError {
+    err := &ErrorBase{}
+
+    return err.Init(err, "message from Error base", nil, nil, 0)
+}
+
+func newErrorB() gerr.IError {
+    err := &ErrorB{}
+
+    return err.Init(err, "message from Error B", nil, nil, 0)
+}
+
+func newChildError() gerr.IError {
+    err := &ChildError{}
+
+    return err.Init(err, "message from Child Error", nil, nil, 0)
+}
+
+// A function which raise and try to catch the error which is not in the same hierarchy
+func myFunc() () {
+    _ = newErrorB().Try(func(err gerr.IError) error {
+        newChildError().Raise()
+
+        return nil
+    }, func(err gerr.IError) error {
+        // This catch block will not called because ErrorB is not in the same error hierarchy of ChildError
+        return nil
+    }, nil)
+}
+
+// Main function
+func main() {
+    _ = newErrorBase().Try(func(err gerr.IError) error {
+        myFunc()
+
+        return nil
+    }, func(err gerr.IError) error {
+        fmt.Println("Catched error:", err)
+
+        return nil
+    }, nil)
+}
+```
+
+This will show:
+```
+Catched error: main.ChildError: message from Child Error
 ```
