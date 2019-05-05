@@ -63,5 +63,5 @@ func Example() {
 	}
 
 	// Output:
-	// github.com/corebreaker/goerrors.tStandardError: open .a_file_5123351069599224559.txt: no such file or directory
+	// StandardError: open .a_file_5123351069599224559.txt: no such file or directory
 }

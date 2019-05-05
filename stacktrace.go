@@ -18,7 +18,7 @@ func getTrace(start uint) []string {
 	callers := make([]uintptr, STACKTRACE_MAXLEN)
 
 	// Gets the caller list, and returns an empty stack trace if there is no caller.
-	n := runtime.Callers(int(start+1), callers)
+	n := runtime.Callers(int(start+2), callers)
 	if n == 0 {
 		return trace
 	}
