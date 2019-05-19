@@ -119,7 +119,7 @@ func TestErrorTry(t *testing.T) {
 
 	_ = gerr.Try(func(err IError) error {
 		return err
-	}, nil, func(err IError) error { return  nil })
+	}, nil, func(err IError) error { return nil })
 
 	_ = gerr.Try(func(err IError) error {
 		err.Raise()

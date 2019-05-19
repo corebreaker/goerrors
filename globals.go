@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	logFatal = log.Fatal
+	logFatal                           = log.Fatal
 	uncatchedErrorHandler ErrorHandler = func(err IError) error {
 		if err != nil {
 			logFatal(err)
