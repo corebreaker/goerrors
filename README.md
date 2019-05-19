@@ -5,6 +5,7 @@
 [![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=plastic)](https://godoc.org/github.com/corebreaker/goerrors)
 [![GitHub license](https://img.shields.io/github/license/corebreaker/goerrors.svg?color=blue&style=plastic)](https://github.com/corebreaker/goerrors/blob/master/LICENSE)
 [![Release](https://img.shields.io/github/release/corebreaker/goerrors.svg?style=plastic)](https://github.com/corebreaker/goerrors/releases)
+[![Dependency status](https://img.shields.io/librariesio/github/corebreaker/goerrors.svg?style=plastic)](https://libraries.io/github/corebreaker/goerrors)
 
 It's a package that's allow you to make Go errors more comprehensive, more featured and easier to use.
 This project is the realisation of the idea introduced by the GIST [try-catch-finally.go](https://gist.github.com/corebreaker/6a93c8210425e96dc1bcbb157f0270b0).
