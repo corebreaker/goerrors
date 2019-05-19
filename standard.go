@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Interface for a standard error which decorate another basic go error (`error` go interface)
+// IStandardError Interface for a standard error which decorate another basic go error (`error` go interface)
 // with an error code, message and other additionnal informations
 type IStandardError interface {
 	// Base interface
@@ -26,12 +26,12 @@ type tStandardError struct {
 	infos bytes.Buffer // Additionnal informations
 }
 
-// Get standard error name
-func (goErr *tStandardError) GetName() string {
+// GetName gets standard error name
+func (se *tStandardError) GetName() string {
 	return "StandardError"
 }
 
-// Add informations in standard error
+// AddInfo adds informations in standard error
 func (se *tStandardError) AddInfo(info string, args ...interface{}) IStandardError {
 	// Just prints into internal buffer the informations passed as parameters
 	_, _ = fmt.Fprintln(&se.infos, fmt.Sprintf(info, args...))
@@ -39,11 +39,12 @@ func (se *tStandardError) AddInfo(info string, args ...interface{}) IStandardErr
 	return se
 }
 
+// GetCode gets error code
 func (se *tStandardError) GetCode() int64 {
 	return se.code
 }
 
-// «Decorate» the error passed as "err" parameter.
+// DecorateError «decorates» the error passed as "err" parameter.
 // The error returned will be an standard error with additionnal informations and stack trace.
 func DecorateError(err error) IStandardError {
 	if err == nil {
@@ -61,7 +62,7 @@ func DecorateError(err error) IStandardError {
 	return ierr
 }
 
-// Like `DecorateError` with error code and custom data
+// DecorateErrorWithDatas is like `DecorateError` with error code and custom data
 func DecorateErrorWithDatas(err error, code int64, data interface{}, msg string, args ...interface{}) IStandardError {
 	if err == nil {
 		return nil
@@ -80,7 +81,7 @@ func DecorateErrorWithDatas(err error, code int64, data interface{}, msg string,
 	return ierr
 }
 
-// Make an standard error from a message passed as "message" parameter
+// MakeError makes an standard error from a message passed as "message" parameter
 func MakeError(message string, args ...interface{}) IStandardError {
 	res := new(tStandardError)
 	_ = res.Init(res, fmt.Sprintf(message, args...), nil, nil, 1)
@@ -88,7 +89,7 @@ func MakeError(message string, args ...interface{}) IStandardError {
 	return res
 }
 
-// Like `MakeError` with error code and custom data
+// MakeErrorWithDatas is like `MakeError` with error code and custom data
 func MakeErrorWithDatas(code int64, data interface{}, message string, args ...interface{}) IStandardError {
 	res := &tStandardError{code: code}
 	_ = res.Init(res, fmt.Sprintf(message, args...), data, nil, 1)
@@ -96,7 +97,7 @@ func MakeErrorWithDatas(code int64, data interface{}, message string, args ...in
 	return res
 }
 
-// Global function to add information in an error whatever.
+// AddInfo is the global function to add information in an error whatever.
 // This function just call the "AddInfo" method of an standard error.
 func AddInfo(err error, info string, args ...interface{}) IStandardError {
 	// Check if "err" is already an standard error
@@ -110,8 +111,9 @@ func AddInfo(err error, info string, args ...interface{}) IStandardError {
 	return goErr.AddInfo(info, args...)
 }
 
+// Catch is the global function to catch an error
 func Catch(err *error, catch, finally ErrorHandler) {
-	var resErr error = nil
+	var resErr error
 
 	defer func() {
 		if finally != nil {
@@ -152,6 +154,7 @@ func Catch(err *error, catch, finally ErrorHandler) {
 	}
 }
 
+// Try is the global function to call a try block
 func Try(try, catch, finally ErrorHandler) (err error) {
 	defer func() {
 		if finally == nil {
@@ -195,14 +198,17 @@ func Try(try, catch, finally ErrorHandler) (err error) {
 	return try(nil)
 }
 
+// Raise is the global function to raise an anonymous error
 func Raise(message string, args ...interface{}) {
 	MakeError(message, args...).raise(1)
 }
 
+// RaiseWithInfos is like Raise with error code and custom data
 func RaiseWithInfos(errorCode int64, data interface{}, message string, args ...interface{}) {
 	MakeErrorWithDatas(errorCode, data, message, args...).raise(1)
 }
 
+// RaiseError is the global funtion to raise the error passed in argument
 func RaiseError(err error) {
 	gerr, ok := err.(IError)
 	if !ok {

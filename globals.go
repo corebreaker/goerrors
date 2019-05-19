@@ -16,8 +16,11 @@ var (
 	}
 )
 
+// MainHandler is the handler for main function used with the CheckedMain function
 type MainHandler func() error
 
+// CheckedMain should be called in the main function body.
+// It assumes the uncatched error to see errors with stacktraces.
 func CheckedMain(handler MainHandler) {
 	defer func() {
 		recovered := recover()
@@ -52,14 +55,19 @@ func CheckedMain(handler MainHandler) {
 	}
 }
 
+// SetUncatchedErrorHandler defines the handler called when an error is not catched.
+//  But the handled is called only if the CheckedMain function is called (indeed, the handler is called by CheckedMain).
 func SetUncatchedErrorHandler(handler ErrorHandler) ErrorHandler {
-	old_handler := uncatchedErrorHandler
+	oldHandler := uncatchedErrorHandler
 
 	uncatchedErrorHandler = handler
 
-	return old_handler
+	return oldHandler
 }
 
+// DiscardPanic discard a panic.
+//  This is an helper function that should be called with a defer instruction to blocks a panic and permits to
+//  continuing the excution instead of exiting the program.
 func DiscardPanic() {
 	recover()
 }

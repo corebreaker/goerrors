@@ -16,8 +16,8 @@ type MyError struct {
 }
 
 var (
-	__errTest MyError
-	__errType = reflect.TypeOf(__errTest)
+	_errTest MyError
+	_errType = reflect.TypeOf(_errTest)
 )
 
 func samePtr(v1, v2 interface{}) bool {
@@ -28,7 +28,7 @@ func TestSetType(t *testing.T) {
 	gerr := &MyError{}
 	gerr.setType(gerr)
 
-	if gerr.errType != __errType {
+	if gerr.errType != _errType {
 		t.Fail()
 	}
 }
@@ -40,7 +40,7 @@ func TestInitError(t *testing.T) {
 	gerr := MyError{}
 	_ = gerr.Init(gerr, "--message--", data, src, 0)
 
-	if gerr.errType != __errType {
+	if gerr.errType != _errType {
 		t.Error("Bad type")
 	}
 
