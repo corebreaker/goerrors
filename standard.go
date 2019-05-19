@@ -208,7 +208,7 @@ func RaiseWithInfos(errorCode int64, data interface{}, message string, args ...i
 	MakeErrorWithDatas(errorCode, data, message, args...).raise(1)
 }
 
-// RaiseError is the global funtion to raise the error passed in argument
+// RaiseError is the global function to raise the error passed in argument
 func RaiseError(err error) {
 	gerr, ok := err.(IError)
 	if !ok {
