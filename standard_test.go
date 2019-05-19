@@ -173,17 +173,29 @@ func TestStdTry(t *testing.T) {
 		return err
 	})
 
+	if err == nil {
+		t.Fail()
+	}
+
 	err = Try(func(err IError) error {
 		panic(fmt.Errorf("error"))
 	}, func(err IError) error {
 		return err
 	}, nil)
 
+	if err == nil {
+		t.Fail()
+	}
+
 	err = Try(func(err IError) error {
 		panic("Error")
 	}, func(err IError) error {
 		return err
 	}, nil)
+
+	if err == nil {
+		t.Fail()
+	}
 }
 
 func TestStdRaise(t *testing.T) {

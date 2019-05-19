@@ -16,8 +16,8 @@ type MyError struct {
 }
 
 var (
-	__errTest MyError
-	__errType = reflect.TypeOf(__errTest)
+	_errTest MyError
+	_errType = reflect.TypeOf(_errTest)
 )
 
 func samePtr(v1, v2 interface{}) bool {
@@ -28,7 +28,7 @@ func TestSetType(t *testing.T) {
 	gerr := &MyError{}
 	gerr.setType(gerr)
 
-	if gerr.errType != __errType {
+	if gerr.errType != _errType {
 		t.Fail()
 	}
 }
@@ -40,7 +40,7 @@ func TestInitError(t *testing.T) {
 	gerr := MyError{}
 	_ = gerr.Init(gerr, "--message--", data, src, 0)
 
-	if gerr.errType != __errType {
+	if gerr.errType != _errType {
 		t.Error("Bad type")
 	}
 
@@ -102,10 +102,10 @@ func TestErrorString(t *testing.T) {
 	gerr := &MyError{}
 	_ = gerr.Init(gerr, "--message--", 1234, errors.New("error"), 0)
 
-	gerr.Error()
+	_ = gerr.Error()
 
 	gerr.message = ""
-	gerr.Error()
+	_ = gerr.Error()
 }
 
 func TestGetSource(t *testing.T) {
@@ -119,7 +119,7 @@ func TestErrorTry(t *testing.T) {
 
 	_ = gerr.Try(func(err IError) error {
 		return err
-	}, nil, func(err IError) error { return  nil })
+	}, nil, func(err IError) error { return nil })
 
 	_ = gerr.Try(func(err IError) error {
 		err.Raise()
@@ -138,8 +138,6 @@ func TestErrorCatchWithPrimitiveError(t *testing.T) {
 
 	_ = gerr.Try(func(err IError) error {
 		panic("error")
-
-		return nil
 	}, nil, nil)
 }
 
@@ -151,8 +149,6 @@ func TestErrorCatchWithBasicError(t *testing.T) {
 
 	_ = gerr.Try(func(err IError) error {
 		panic(errors.New("error"))
-
-		return nil
 	}, nil, nil)
 }
 

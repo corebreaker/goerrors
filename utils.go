@@ -27,27 +27,27 @@ func _concat(l1, l2 []string) []string {
 
 // Get type hierarchy from an error type passed as `this_type` parameter.
 // The `final_type` parameter represents type of `GoError` structure.
-func _getTypeHierarchy(this_type, final_type reflect.Type) []string {
-	if (this_type == nil) || (this_type.Kind() != reflect.Struct) {
+func _getTypeHierarchy(thisType, finalType reflect.Type) []string {
+	if (thisType == nil) || (thisType.Kind() != reflect.Struct) {
 		return []string{}
 	}
 
-	res := []string{this_type.PkgPath() + "." + this_type.Name()}
+	res := []string{thisType.PkgPath() + "." + thisType.Name()}
 
-	if this_type == final_type {
+	if thisType == finalType {
 		return res
 	}
 
 	list := make([]string, 0)
 
-	n := this_type.NumField()
+	n := thisType.NumField()
 	for i := 0; i < n; i++ {
-		field := this_type.Field(i)
+		field := thisType.Field(i)
 		if !field.Anonymous {
 			continue
 		}
 
-		parents := _getTypeHierarchy(field.Type, final_type)
+		parents := _getTypeHierarchy(field.Type, finalType)
 		if len(parents) > 0 {
 			list = _concat(list, parents)
 		}

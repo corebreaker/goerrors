@@ -7,7 +7,7 @@ import (
 
 func Example() {
 	// A function which open a file
-	open_file := func(name string) (*os.File, error) {
+	openFile := func(name string) (*os.File, error) {
 		f, err := os.Open(name)
 
 		// Decorate the opening error
@@ -19,7 +19,7 @@ func Example() {
 	}
 
 	// A function which read one byte in the opened file
-	read_file := func(f *os.File) (byte, error) {
+	readFile := func(f *os.File) (byte, error) {
 		var b [1]byte
 
 		n, err := f.Read(b[:])
@@ -45,7 +45,7 @@ func Example() {
 	const name = ".a_file_5123351069599224559.txt"
 
 	// Call the checked open function
-	f, err := open_file(name)
+	f, err := openFile(name)
 	if err != nil {
 		fmt.Println(err)
 
@@ -55,7 +55,7 @@ func Example() {
 	// Here, in this example, this code won't never be executed if the file can't be opened
 	defer f.Close()
 
-	_, err = read_file(f)
+	_, err = readFile(f)
 	if err != nil {
 		fmt.Println(err)
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// This version of stack trace asks to have a limit which arbitrary set.
+// STACKTRACE_MAXLEN this version of stack trace asks to have a limit which arbitrary set.
 const STACKTRACE_MAXLEN = 65536
 
 // Construct formated stack trace.
@@ -27,12 +27,12 @@ func getTrace(start uint) []string {
 	frames := runtime.CallersFrames(callers[:n])
 
 	// Populates the stack trace.
-	for has_more := true; has_more; {
+	for hasMore := true; hasMore; {
 		// A stack frame.
 		var frame runtime.Frame
 
 		// Gets the next frame/
-		frame, has_more = frames.Next()
+		frame, hasMore = frames.Next()
 
 		// If the file is from `runtime` package, so go to the next frame.
 		if strings.Contains(frame.File, "runtime/") {

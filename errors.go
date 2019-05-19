@@ -12,7 +12,7 @@ var (
 	errorHierarchies = make(map[string][]string)
 )
 
-// Interface for extended Go errors
+// IError Interface for extended Go errors
 type IError interface {
 	// This is an error
 	error
@@ -54,10 +54,10 @@ type IError interface {
 	raise(pruneLevels uint)
 }
 
-// Handler for executing Try, Catch, or Finally block
+// ErrorHandler Handler for executing Try, Catch, or Finally block
 type ErrorHandler func(err IError) error
 
-// Basic error structure
+// GoError Basic error structure
 type GoError struct {
 	source  error        // Cause or original error
 	message string       // Error message
@@ -120,36 +120,36 @@ func (goErr *GoError) Error() string {
 	return out.String()
 }
 
-// Get error name
+// GetName gets error name
 func (goErr *GoError) GetName() string {
 	return goErr.errType.PkgPath() + "." + goErr.errType.Name()
 }
 
-// Get cause error (parent error)
+// GetSource gets cause error (parent error)
 func (goErr *GoError) GetSource() error {
 	return goErr.source
 }
 
-// Get error message
+// GetMessage gets error message
 func (goErr *GoError) GetMessage() string {
 	return goErr.message
 }
 
-// Get custon data
+// GetData gets custon data
 func (goErr *GoError) GetData() interface{} {
 	return goErr.data
 }
 
-// Complete try/catch/finally block
+// Try completes try/catch/finally block
 func (goErr *GoError) Try(try, catch, finally ErrorHandler) (err error) {
 	defer goErr.Catch(&err, catch, finally)
 
 	return try(goErr.getReference())
 }
 
-// Catch error (used as a defered call)
+// Catch catchs error (used as a defered call)
 func (goErr *GoError) Catch(err *error, catch, finally ErrorHandler) {
-	var resErr error = nil
+	var resErr error
 
 	defer func() {
 		if finally != nil {
@@ -183,12 +183,12 @@ func (goErr *GoError) Catch(err *error, catch, finally ErrorHandler) {
 	}
 }
 
-// Raise error
+// Raise for raising error (obviously)
 func (goErr *GoError) Raise() {
 	goErr.raise(1)
 }
 
-// Test if this error is one of parents of error `err` passed in parameter
+// IsParentOf tests if this error is one of parents of error `err` passed in parameter
 func (goErr *GoError) IsParentOf(err error) bool {
 	gerr, ok := err.(IError)
 	if !ok {
@@ -206,6 +206,7 @@ func (goErr *GoError) IsParentOf(err error) bool {
 	return false
 }
 
+// Init for initializing customized error
 func (goErr *GoError) Init(value interface{}, message string, data interface{}, source error, pruneLevels uint) IError {
 	if goErr.errType == nil {
 		goErr.setType(value)
@@ -220,6 +221,7 @@ func (goErr *GoError) Init(value interface{}, message string, data interface{}, 
 	return goErr
 }
 
+// Raise the error
 func (goErr *GoError) raise(pruneLevels uint) {
 	res := goErr.getReference()
 	res.populateStackTrace(pruneLevels + 1)
@@ -227,6 +229,7 @@ func (goErr *GoError) raise(pruneLevels uint) {
 	panic(res)
 }
 
+// Define the type of customized error
 func (goErr *GoError) setType(value interface{}) {
 	errType := reflect.ValueOf(value).Type()
 	if errType.Kind() == reflect.Ptr {
@@ -271,7 +274,7 @@ func (goErr *GoError) getParents() []string {
 	return res
 }
 
-// GetSource
+// GetSource gets the error source from an error, or returns nil if the error passed in argument is not an IError
 func GetSource(err error) error {
 	ierr, ok := err.(IError)
 	if !ok {

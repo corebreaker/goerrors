@@ -31,8 +31,6 @@ func TestCheckedMain(t *testing.T) {
 
 	CheckedMain(func() error {
 		panic("error")
-
-		return nil
 	})
 
 	SetUncatchedErrorHandler(func(err IError) error { return errors.New("error") })

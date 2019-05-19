@@ -5,6 +5,50 @@ import (
 	"testing"
 )
 
+type X struct {
+	int
+	j float32
+}
+
+type A struct {
+}
+
+type B struct {
+	A
+	X
+}
+
+type C struct {
+	B
+}
+
+type D struct {
+	A
+	B
+	X
+}
+
+type E struct {
+	D
+	C
+}
+
+const (
+	n1 = "github.com/corebreaker/goerrors.A"
+	n2 = "github.com/corebreaker/goerrors.B"
+	n3 = "github.com/corebreaker/goerrors.C"
+	n4 = "github.com/corebreaker/goerrors.D"
+	n5 = "github.com/corebreaker/goerrors.E"
+)
+
+var (
+	tA = reflect.TypeOf(A{})
+	tB = reflect.TypeOf(B{})
+	tC = reflect.TypeOf(C{})
+	tD = reflect.TypeOf(D{})
+	tE = reflect.TypeOf(E{})
+)
+
 func TestConcat(t *testing.T) {
 	if _concat(nil, nil) != nil {
 		t.Error("Concatenation of 2 nil lists should be nil")
@@ -44,47 +88,7 @@ func TestConcat(t *testing.T) {
 	}
 }
 
-func TestStructHierarchy(t *testing.T) {
-	type X struct {
-		int
-		j float32
-	}
-
-	type A struct {
-	}
-
-	type B struct {
-		A
-		X
-	}
-
-	type C struct {
-		B
-	}
-
-	type D struct {
-		A
-		B
-		X
-	}
-
-	type E struct {
-		D
-		C
-	}
-
-	tA := reflect.TypeOf(A{})
-	tB := reflect.TypeOf(B{})
-	tC := reflect.TypeOf(C{})
-	tD := reflect.TypeOf(D{})
-	tE := reflect.TypeOf(E{})
-
-	n1 := "github.com/corebreaker/goerrors.A"
-	n2 := "github.com/corebreaker/goerrors.B"
-	n3 := "github.com/corebreaker/goerrors.C"
-	n4 := "github.com/corebreaker/goerrors.D"
-	n5 := "github.com/corebreaker/goerrors.E"
-
+func TestStructHierarchyZeroLevel(t *testing.T) {
 	res := _getTypeHierarchy(tA, tA)
 
 	if res == nil {
@@ -98,8 +102,10 @@ func TestStructHierarchy(t *testing.T) {
 	if res[0] != n1 {
 		t.Errorf("With zero level, it should return a list one type %v; the return is: %v", n1, res)
 	}
+}
 
-	res = _getTypeHierarchy(tB, tA)
+func TestStructHierarchyOneLevel(t *testing.T) {
+	res := _getTypeHierarchy(tB, tA)
 
 	if res == nil {
 		t.Error("With one level, it returns nil")
@@ -112,8 +118,10 @@ func TestStructHierarchy(t *testing.T) {
 	if (res[0] != n2) || (res[1] != n1) {
 		t.Errorf("With one levels, it should return a list with types %v and %v; the return is: %v", n2, n1, res)
 	}
+}
 
-	res = _getTypeHierarchy(tC, tA)
+func TestStructHierarchyTwoLevels(t *testing.T) {
+	res := _getTypeHierarchy(tC, tA)
 
 	if res == nil {
 		t.Error("With two levels, it returns nil")
@@ -130,8 +138,10 @@ func TestStructHierarchy(t *testing.T) {
 			n1,
 			res)
 	}
+}
 
-	res = _getTypeHierarchy(tD, tA)
+func TestStructHierarchyThreeLevels(t *testing.T) {
+	res := _getTypeHierarchy(tD, tA)
 
 	if res == nil {
 		t.Error("With three levels, it returns nil")
@@ -149,8 +159,10 @@ func TestStructHierarchy(t *testing.T) {
 			n1,
 			res)
 	}
+}
 
-	res = _getTypeHierarchy(tE, tA)
+func TestStructHierarchyFourLevels(t *testing.T) {
+	res := _getTypeHierarchy(tE, tA)
 
 	if res == nil {
 		t.Error("With four levels, it returns nil")
