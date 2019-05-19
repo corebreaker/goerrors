@@ -102,10 +102,10 @@ func TestErrorString(t *testing.T) {
 	gerr := &MyError{}
 	_ = gerr.Init(gerr, "--message--", 1234, errors.New("error"), 0)
 
-	gerr.Error()
+	_ = gerr.Error()
 
 	gerr.message = ""
-	gerr.Error()
+	_ = gerr.Error()
 }
 
 func TestGetSource(t *testing.T) {
@@ -138,8 +138,6 @@ func TestErrorCatchWithPrimitiveError(t *testing.T) {
 
 	_ = gerr.Try(func(err IError) error {
 		panic("error")
-
-		return nil
 	}, nil, nil)
 }
 
@@ -151,8 +149,6 @@ func TestErrorCatchWithBasicError(t *testing.T) {
 
 	_ = gerr.Try(func(err IError) error {
 		panic(errors.New("error"))
-
-		return nil
 	}, nil, nil)
 }
 
